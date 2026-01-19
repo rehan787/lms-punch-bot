@@ -1,0 +1,33 @@
+name: LMS Punch Automation
+
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"   # Punch at 9:00 AM (Mon–Fri)
+    - cron: "0 19 * * 1-5"  # Punch at 7:00 PM (Mon–Fri)
+  workflow_dispatch:
+
+jobs:
+  punch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install chromium
+
+      - name: Run Punch Bot
+        env:
+          LMS_URL: https://mylmsui.paysquare.com/
+          LMS_USER: ${{ secrets.LMS_USER }}
+          LMS_PASS: ${{ secrets.LMS_PASS }}
+        run: |
+          python punch.py
