@@ -2,50 +2,36 @@ from playwright.sync_api import sync_playwright
 import os
 import time
 
-# -----------------------------
-# LMS URL & credentials
-# -----------------------------
 LMS_URL = os.getenv("LMS_URL")
 USERNAME = os.getenv("LMS_USER")
 PASSWORD = os.getenv("LMS_PASS")
 
-# -----------------------------
-# Main automation
-# -----------------------------
 with sync_playwright() as p:
-    # Launch headless browser
     browser = p.chromium.launch(headless=True)
     page = browser.new_page()
+    page.goto(LMS_URL, wait_until="load", timeout=60000)
 
-    # 1️⃣ Open LMS login page
-    page.goto(LMS_URL, wait_until="load", timeout=60000)  # max 1 minute
+    # 1️⃣ Get the login iframe
+    # If multiple iframes, use frame name/id instead of first()
+    frame = page.frame_locator("iframe").first
 
-    # 2️⃣ Wait for username input to exist, then force-fill
-    page.wait_for_selector("#ctl03_txtuser", timeout=60000)
-    time.sleep(1)  # buffer for JS / WaterMark
-    page.evaluate(f"document.querySelector('#ctl03_txtuser').value = '{USERNAME}';")
+    # 2️⃣ Fill username
+    frame.locator("#ctl03_txtuser").fill(USERNAME)
 
-    # 3️⃣ Wait for password input to exist, then force-fill
-    page.wait_for_selector("#ctl03_txtpassword", timeout=60000)
-    time.sleep(1)
-    page.evaluate(f"document.querySelector('#ctl03_txtpassword').value = '{PASSWORD}';")
+    # 3️⃣ Fill password
+    frame.locator("#ctl03_txtpassword").fill(PASSWORD)
 
-    # 4️⃣ Wait for login button and click
-    page.wait_for_selector("#ctl03_btnLogin", timeout=60000)
-    time.sleep(1)
-    page.click("#ctl03_btnLogin")
+    # 4️⃣ Click login
+    frame.locator("#ctl03_btnLogin").click()
 
     # 5️⃣ Wait for dashboard to load fully
     page.wait_for_load_state("networkidle", timeout=60000)
-    time.sleep(3)  # small buffer for JS rendering
+    time.sleep(3)
 
-    # 6️⃣ Wait for punch button to appear and click
+    # 6️⃣ Punch button on main page
     page.wait_for_selector("button.btn.btn-warning.btn-large.bg-color", timeout=60000)
     time.sleep(1)
     page.click("button.btn.btn-warning.btn-large.bg-color")
 
-    # 7️⃣ Close browser
     browser.close()
-
-    # ✅ Finished
     print("Punch action completed successfully!")
