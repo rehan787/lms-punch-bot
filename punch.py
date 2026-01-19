@@ -20,12 +20,12 @@ with sync_playwright() as p:
     # 1️⃣ Open LMS login page
     page.goto(LMS_URL, wait_until="load", timeout=60000)  # 60s max
 
-    # 2️⃣ Wait for username input field and fill
+    # 2️⃣ Wait for username input to exist, then fill
     page.wait_for_selector("#ctl03_txtuser", timeout=60000)
-    time.sleep(1)  # small buffer
+    time.sleep(1)  # small buffer for JS
     page.fill("#ctl03_txtuser", USERNAME)
 
-    # 3️⃣ Wait for password input field and fill
+    # 3️⃣ Wait for password input to exist, then fill
     page.wait_for_selector("#ctl03_txtpassword", timeout=60000)
     time.sleep(1)
     page.fill("#ctl03_txtpassword", PASSWORD)
@@ -40,7 +40,6 @@ with sync_playwright() as p:
     time.sleep(3)  # small buffer for JS rendering
 
     # 6️⃣ Wait for punch button to appear and click
-    # Works even if page loads slowly
     page.wait_for_selector("button.btn.btn-warning.btn-large.bg-color", timeout=60000)
     time.sleep(1)
     page.click("button.btn.btn-warning.btn-large.bg-color")
