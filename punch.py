@@ -10,6 +10,13 @@ USERNAME = os.getenv("LMS_USER")
 PASSWORD = os.getenv("LMS_PASS")
 
 # -----------------------------
+# XPaths
+# -----------------------------
+USERNAME_XPATH = "/html/body/form/div[3]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/div/div/div/div/table/tbody/tr[2]/td/input[1]"
+PASSWORD_XPATH = "/html/body/form/div[3]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/div/div/div/div/table/tbody/tr[3]/td/input[1]"
+PUNCH_BUTTON_SELECTOR = "button.btn.btn-warning.btn-large.bg-color"
+
+# -----------------------------
 # Main automation
 # -----------------------------
 with sync_playwright() as p:
@@ -20,26 +27,40 @@ with sync_playwright() as p:
     page.goto(LMS_URL, wait_until="load", timeout=60000)  # max 1 min
 
     # -----------------------------
-    # 2️⃣ Fill username (force via JS)
+    # 2️⃣ Poll & fill username
     # -----------------------------
-    username_xpath = "/html/body/form/div[3]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/div/div/div/div/table/tbody/tr[2]/td/input[1]"
-    page.wait_for_selector(f"xpath={username_xpath}", state="attached", timeout=60000)
-    time.sleep(1)
-    page.evaluate(f"""
-        document.evaluate("{username_xpath}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
-        .singleNodeValue.value = "{USERNAME}";
-    """)
+    for _ in range(60):  # max 60 seconds
+        exists = page.evaluate(f"""
+            document.evaluate("{USERNAME_XPATH}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+            .singleNodeValue != null
+        """)
+        if exists:
+            page.evaluate(f"""
+                document.evaluate("{USERNAME_XPATH}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+                .singleNodeValue.value = "{USERNAME}";
+            """)
+            break
+        time.sleep(1)
+    else:
+        raise Exception("Username input not found after 60 seconds")
 
     # -----------------------------
-    # 3️⃣ Fill password (force via JS)
+    # 3️⃣ Poll & fill password
     # -----------------------------
-    password_xpath = "/html/body/form/div[3]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/div/div/div/div/table/tbody/tr[3]/td/input[1]"
-    page.wait_for_selector(f"xpath={password_xpath}", state="attached", timeout=60000)
-    time.sleep(1)
-    page.evaluate(f"""
-        document.evaluate("{password_xpath}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
-        .singleNodeValue.value = "{PASSWORD}";
-    """)
+    for _ in range(60):  # max 60 seconds
+        exists = page.evaluate(f"""
+            document.evaluate("{PASSWORD_XPATH}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+            .singleNodeValue != null
+        """)
+        if exists:
+            page.evaluate(f"""
+                document.evaluate("{PASSWORD_XPATH}", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
+                .singleNodeValue.value = "{PASSWORD}";
+            """)
+            break
+        time.sleep(1)
+    else:
+        raise Exception("Password input not found after 60 seconds")
 
     # -----------------------------
     # 4️⃣ Click login button
@@ -52,15 +73,21 @@ with sync_playwright() as p:
     # 5️⃣ Wait for dashboard to load fully
     # -----------------------------
     page.wait_for_load_state("networkidle", timeout=60000)
-    time.sleep(3)  # small buffer for JS
+    time.sleep(3)
 
     # -----------------------------
     # 6️⃣ Click punch button
     # -----------------------------
-    punch_selector = "button.btn.btn-warning.btn-large.bg-color"
-    page.wait_for_selector(punch_selector, timeout=60000)
-    time.sleep(1)
-    page.click(punch_selector)
+    for _ in range(60):  # max 60 seconds
+        exists = page.evaluate(f"""
+            document.querySelector("{PUNCH_BUTTON_SELECTOR}") != null
+        """)
+        if exists:
+            page.click(PUNCH_BUTTON_SELECTOR)
+            break
+        time.sleep(1)
+    else:
+        raise Exception("Punch button not found after 60 seconds")
 
     # -----------------------------
     # 7️⃣ Close browser
