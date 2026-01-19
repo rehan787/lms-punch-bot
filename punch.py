@@ -18,17 +18,17 @@ with sync_playwright() as p:
     page = browser.new_page()
 
     # 1️⃣ Open LMS login page
-    page.goto(LMS_URL, wait_until="load", timeout=60000)  # 60s max
+    page.goto(LMS_URL, wait_until="load", timeout=60000)  # max 1 minute
 
-    # 2️⃣ Wait for username input to exist, then fill
+    # 2️⃣ Wait for username input to exist, then force-fill
     page.wait_for_selector("#ctl03_txtuser", timeout=60000)
-    time.sleep(1)  # small buffer for JS
-    page.fill("#ctl03_txtuser", USERNAME)
+    time.sleep(1)  # buffer for JS / WaterMark
+    page.evaluate(f"document.querySelector('#ctl03_txtuser').value = '{USERNAME}';")
 
-    # 3️⃣ Wait for password input to exist, then fill
+    # 3️⃣ Wait for password input to exist, then force-fill
     page.wait_for_selector("#ctl03_txtpassword", timeout=60000)
     time.sleep(1)
-    page.fill("#ctl03_txtpassword", PASSWORD)
+    page.evaluate(f"document.querySelector('#ctl03_txtpassword').value = '{PASSWORD}';")
 
     # 4️⃣ Wait for login button and click
     page.wait_for_selector("#ctl03_btnLogin", timeout=60000)
